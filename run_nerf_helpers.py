@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 # TODO: remove this dependency
-from torchsearchsorted import searchsorted
+# from torchsearchsorted import searchsorted
 
 
 # Misc
@@ -265,7 +265,7 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
 
     # Invert CDF
     u = u.contiguous()
-    inds = searchsorted(cdf, u, side='right')
+    inds = torch.searchsorted(cdf, u, right=True)
     below = torch.max(torch.zeros_like(inds-1), inds-1)
     above = torch.min((cdf.shape[-1]-1) * torch.ones_like(inds), inds)
     inds_g = torch.stack([below, above], -1)  # (batch, N_samples, 2)
@@ -282,3 +282,25 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
     samples = bins_g[...,0] + t * (bins_g[...,1]-bins_g[...,0])
 
     return samples
+
+#-------------------------------------------my code
+def perspective_view():
+    cam_origin = torch.tensor([0.05, 0, -0.05])
+    theta = 100 * np.pi / 180
+    cam_rotation = torch.tensor([
+        [np.cos(theta),  0.0000000, np.sin(theta)],
+        [0.0000000,  1.0000000,  0.0000000],
+        [-np.sin(theta),  0.0000000,  np.cos(theta)]
+        ])
+    c2w = torch.eye(4)
+    c2w[:3,3] = cam_origin
+    c2w[:3, :3] = cam_rotation
+    hw = [400, 400]
+    H, W = hw
+    rays_o_test, rays_d_test = get_rays(H, W, 150, c2w)
+    rays_o_test = torch.reshape(rays_o_test, (-1, 3))
+    rays_d_test = torch.reshape(rays_d_test, (-1, 3))
+    return rays_o_test, rays_d_test
+
+
+#-------------------------------------------my code
